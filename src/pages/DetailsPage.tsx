@@ -11,18 +11,19 @@ const DetailPage = () => {
     thumbnail?: { path: string; extension: string }
     comics?: { items?: { name: string }[] }
     series?: { items?: { resourceURI: string; name: string }[] }
+    urls?: { type: string; url: string }[]
   } | null>(null);
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchCharacterDetails = async () => {
+    const fetchCharacterDetails = async () : Promise<void> => {
       setLoading(true);
       const data = await fetchData(`characters/${id}`);
       setCharacter(data.results[0]);
       setLoading(false);
     }
 
-    fetchCharacterDetails();
+    fetchCharacterDetails().then(() => {});
   }, [id]);
 
   if (loading) {
@@ -69,7 +70,7 @@ const DetailPage = () => {
       </div>
 
       {/* Series */}
-      <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+      <div className="bg-gray-100 p-4 rounded-lg shadow-md mb-6">
         <h2 className="text-2xl font-semibold text-gray-700 mb-4">Appears in Series</h2>
         {character?.series?.items?.length ? (
           <ul className="list-disc list-inside space-y-2">
@@ -81,6 +82,22 @@ const DetailPage = () => {
           </ul>
         ) : (
           <p className="text-gray-600">No series available.</p>
+        )}
+      </div>
+
+      {/* URLs */}
+      <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+        <h2 className="text-2xl font-semibold text-gray-700 mb-4">External Links</h2>
+        {character?.urls?.length ? (
+          <ul className="list-disc list-inside space-y-2">
+            {character?.urls?.map((url, index) => (
+              <li key={index} className="text-gray-600">
+                <a href={url.url} target="_blank" rel="noreferrer">{url.type}</a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-600">No external links available.</p>
         )}
       </div>
     </div>
