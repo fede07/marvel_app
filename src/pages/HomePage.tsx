@@ -3,6 +3,7 @@ import {fetchData} from "../services/api.ts"
 import Loader from "../components/Loader"
 import Card from "../components/Card.tsx"
 import SearchBar from "../components/SearchBar.tsx"
+import FilterBar from "../components/FilterBar.tsx"
 
 interface Character {
   id: number
@@ -13,7 +14,8 @@ interface Character {
   }
 }
 
-const CHARACTERS_PER_PAGE = 12;
+const CHARACTERS_PER_PAGE = 16
+const ITEM_LIMIT = 100
 
 const HomePage = () => {
 
@@ -25,6 +27,8 @@ const HomePage = () => {
   const [debounceSearchTerm, setDebounceSearchTerm] = useState(searchTerm)
   const [hasMore, setHasMore] = useState(true)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
+  const [selectedComic] = useState<string | undefined>(undefined)
+  const [selectedEvent, setSelectedEvent] = useState<string | undefined>(undefined)
 
   const observer = useRef<IntersectionObserver | null>(null)
   const lastCharacterRef = useRef<HTMLDivElement | null>(null)
@@ -42,7 +46,22 @@ const HomePage = () => {
   } ,[searchTerm]);
 
   useEffect(() => {
+    setCharacters([])
+    setPage(1)
+    setHasMore(true)
+    setIsFirstLoad(true)
+  } ,[selectedComic]);
+
+  useEffect(() => {
+    setCharacters([])
+    setPage(1)
+    setHasMore(true)
+    setIsFirstLoad(true)
+  } ,[selectedEvent]);
+
+  useEffect(() => {
     const fetchCharacters = async () => {
+      let endpoint = "characters"
       if(!hasMore) return
 
       try {
@@ -57,7 +76,21 @@ const HomePage = () => {
           params.nameStartsWith = debounceSearchTerm
         }
 
-        const data = await fetchData("characters", params)
+        if (selectedComic && selectedComic !== "All Comics") {
+          endpoint = "comics/" + selectedComic + "/characters"
+        } else {
+          endpoint = "characters"
+        }
+
+        if (selectedEvent && selectedEvent !== "All Events") {
+          endpoint = "events/" + selectedEvent + "/characters"
+        } else {
+          endpoint = "characters"
+        }
+
+        console.log(endpoint, params)
+
+        const data = await fetchData(endpoint, params)
 
         if (data && data.results.length > 0) {
           setCharacters((prev) => (isFirstLoad? data.results : [...prev, ...data.results]))
@@ -72,8 +105,8 @@ const HomePage = () => {
         setLoading(false)
       }
     }
-    fetchCharacters()
-  }, [page, debounceSearchTerm])
+    fetchCharacters().then(() => {})
+  }, [page, debounceSearchTerm, selectedComic, selectedEvent])
 
   useEffect(() => {
     if (loading || !hasMore) return
@@ -99,10 +132,12 @@ const HomePage = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
+    <div className="container mx-auto p-4 max-w-4xl bg-white">
       <h1 className="text-2xl font-bold text-white text-center w-full">Marvel DB</h1>
       <div className="w-full max-w-md mx-auto p-6 md:p-8">
         <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        {/*<FilterBar filterType="comics" selectedItem={selectedComic ?? ""} setSelectedItem={setSelectedComic} />*/}
+        <FilterBar filterType="events" selectedItem={selectedEvent ?? ""} setSelectedItem={setSelectedEvent} limit={ITEM_LIMIT} />
       </div>
 
       {characters.length === 0 && !loading && (
